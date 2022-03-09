@@ -8,7 +8,7 @@ June 12, 2021
 
 California is the heart of the United States&#39; agriculture. Over the third of vegetables and two-thirds of all fruits and nuts are grown here. The Mediterranean climate allows for the production of a large variety of crops with high yields. California-grown vegetables have high levels of valuable nutrients (Howard et al. 1962). For certain crops, like strawberries, there is a difference between organic and inorganic cultivation methods (Yadav et al. 2016). California is world-famous for the size and taste of its strawberries. The production of strawberries is highly profitable but also risky because of many diseases affecting the crop.
 
-![](assets/image001.jpg)\
+![](assets/image001.jpg)
 
 _California Strawberries_
 
