@@ -1,0 +1,217 @@
+---
+title: "Agriculture Report"
+author: "Nikita Tkachenko"
+date: "June 12, 2021"
+output:
+  word_document: default
+  html_document: default
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      error = FALSE)
+```
+
+# Introduction
+
+California is the heart of the United States’ agriculture. Over the third of vegetables and two-thirds of all fruits and nuts are grown here. The Mediterranean climate allows for the production of a large variety of crops with high yields. California-grown vegetables have high levels of valuable nutrients [@howard1962nutrient]. For certain crops, like strawberries, there is a difference between organic and inorganic cultivation methods [@yadav2016response]. California is world-famous for the size and taste of its strawberries. The production of strawberries is highly profitable but also risky because of many diseases affecting the crop.
+
+![California Strawberries](images/strawberriesCA.jpg)
+
+**Figure 1:** California Strawberries
+
+## Production
+California is the leading producer of strawberries in the United States, responsible for over 90% of the fruit. The production of strawberries has been steadily increasing since 1962. The demand for strawberries was primarily fueled by the increased prosperity of the nation, population growth, and trends for a healthy lifestyle. [@strawberries2019]
+
+### Yield per Acre
+The increase in the yield can be attributed to the successful implementation of a number of practices such as drip irrigation, four-row bed system, competitive cultivars, effective fertilizers, and fumigation.[@voth1990culture]
+
+### Harvested Acreage
+The increase in acreage is attributed mainly to the demand for the crop as well as the transition to less yielding but more profitable organic production.
+
+## Organic
+Organic strawberries have been on the rise, with consumers demanding healthy and tasty fruits. Organic production methods are less efficient when it comes to yields. Yet, organic strawberries can be more profitable to farmers because of the high demand and prices while being less damaging to the environment. [@gliessman1996organic] Additionally, organic strawberries have better taste characteristics and a higher concentration of valuable nutrients than their conventional counterpart.[@nunes2012quality]
+
+
+## Methyle Bromide
+Methyl bromide has been used since the 1950s by California strawberry farms to protect the crop from soilborne diseases such as Verticillium wilt. Verticillium wilt was the major limiting factor in 1950, so the fumigation with methyl bromide was introduced. The fumigation was so effective that more than 90% of all commercial strawberry fruit in California was produced using this technique. Nonetheless, methyl bromide was connected to ozone depletion, and its use was banned in 2005; however, the strawberry industry received an exemption until 2016. Registration of a safe and effective fumigant is highly unlikely, so crop losses due to soilborne diseases are likely to increase. [@holmes2020strawberries]
+
+
+# Methods
+
+I have used the Strawberry data to analyze growth of the strawberry production in California. In my analysis, I have utilized linear regression modeling to identify the trend and deviations.
+
+## Data
+
+Strawberry production, yield, and acreage data were taken from the USDA Economic Research Service (available at http://usda.mannlib.cornell.edu/MannUsda/viewDocumentInfo.do?documentID=1381).
+
+## Analysis
+
+I used R language [@R-language] with ggplot2 [@ggplot] to visualize my data, tidyr [@tidyr] to clean my data, and dplyr [@dplyr] to manipulate my data.
+
+# Results
+
+```{r load-packages-and-data}
+# load packages for analysis
+library("ggplot2")
+library("dplyr")
+library("tidyr")
+
+# load the vegetable dataset
+strawberry_data <- read.csv("assets/strawberry_data_cleaned.csv") # you only need to use one or the other
+strawberry_data <- na.omit(strawberry_data)
+```
+
+```{r strawberry_production_by_state, fig.width= 7}
+strawberry_data %>%
+  filter(Metric == "Production") %>%
+  group_by(year) %>%  
+  ggplot(aes(x=year,y=value, color = State))+
+  geom_line() +
+  labs(x = "Year",
+       y = "Production in Million Pounds",
+       title = "Strawberry Production by State")+
+  theme(legend.position = "bottom")
+
+```
+**Figure 1:** California is by far the largest producer of strawberries in the United States.
+```{r Califronia_strawberry_production, fig.width=7}
+###
+strawberry_data %>%
+  filter(State == "California", Metric == "Production") %>%
+  ggplot(aes(x=year,y=value)) +
+  geom_line() +
+  geom_smooth(method = "lm", 
+              se = FALSE, 
+              color = "red") +
+  labs(x = "Year",
+       y = "Production, Million Pounds",
+       title = "Strawberry Production in California")+
+  theme(legend.position = "bottom")
+
+strawberry_data %>%
+  filter(State == "California",
+  Metric == "Production") %>%
+  lm(data = .,
+     value ~ year) %>% 
+  summary()
+```
+**Figure 2:** A linear regression line shows that the production of strawberries in California is increasing over time. This relationship is significant (p < 0.001, R^2 = 0.9493). However, there was an evident dip in production in the year 2001.
+
+```{r California_Yield, fig.width=7}
+strawberry_data %>%
+  filter(State == "California", Metric == "Yield per acre") %>%
+  ggplot(aes(x=year,y=value))+
+  geom_line() +
+  labs(x = "Year",
+       y = "Yield per Acre, Thousand Pounds",
+       title = "Strawberry Yield per Acre in California")+
+  theme(legend.position = "bottom")
+```
+**Figure 3:** Stawberry yield has been increasing over the last two decades. However, there are two observable troughs in 2001 and 1992.
+
+``` {r California_Acreage, fig.width = 7}
+strawberry_data %>%
+  filter(State == "California", Metric == "Harvested acreage") %>%
+  ggplot(aes(x=year,y=value))+
+  geom_line() +
+  labs(x = "Year",
+       y = "Harvested Acreage, Thousand Acres",
+       title = "Strawberry Harvested Acreage in California")+
+  theme(legend.position = "bottom")
+
+```
+
+**Figure 4:** Harvested acreage has been steadily increasing. Yet there was a significant decline in 1997.
+```{r zones_plot, fig.width=7}
+a <- strawberry_data %>%
+  filter(State == "California", Metric == "Harvested acreage") %>%
+  select(year, value) %>%
+  mutate(yoyHarvest = value/lag(value,1))
+
+b <- strawberry_data %>%
+  filter(State == "California", Metric == "Yield per acre") %>%
+  select(year, value) %>%
+  mutate(yoyYield = value/lag(value,1))
+
+left_join(a,b, by = 'year')[,c(1,3,5)] %>%
+  mutate(productionIncrease = (yoyHarvest*yoyYield)>1)%>%
+  na.omit()%>%
+  ggplot(aes(x = yoyHarvest, y = yoyYield,color=productionIncrease))+
+  geom_point()+
+  geom_hline(yintercept = 1)+
+  geom_vline(xintercept = 1)+
+  geom_abline(slope = -1,intercept = 2)+
+  geom_text(aes(label = year),nudge_y = 0.02)+
+  annotate(geom = "text", x = 1.07, y = 1.1, label = "I")+
+  annotate(geom = "text", x = 0.95, y = 1.1, label = "II")+
+  annotate(geom = "text", x = 0.92, y = 1.04, label = "III")+
+  annotate(geom = "text", x = 0.94, y = 0.9, label = "IV")+
+  annotate(geom = "text", x = 1.05, y = 0.87, label = "V")+
+  annotate(geom = "text", x = 1.125, y = 0.95, label = "VI")+
+  labs(title = "Year on Year Growth",
+       x = "Harvested Acreage",
+       y = "Yield per Acre",
+       color = "Production Increase")+
+  theme(legend.position = "bottom")
+
+```
+**Figure 5:** The plot shows Year to Year growth of the Harvested Acreage (x) and Yield per Acre (y). The plot is divided into the following zones. I - Yield and Acreage increased in that year. II Yield per Acre increase compensated for Harvested Acreage decrease. III Yield per Acre did not entirely offset Harvested Acreage decline. IV both Yield and Acreage declined. V Acreage increase did not offset Yield decline. VI Acreage increase compensated for Yield decrease. 2001 is the only year in zone IV.
+```{r Deviation_from_LM,fig.width=7}
+model <- strawberry_data %>%
+  filter(State == "California",
+         Metric == "Production")%>%
+  lm(data = .,
+     value ~ year)
+
+years <- data.frame(year = c(1990:2012))
+predicted <- predict(model,years)
+predicted <- as.data.frame(predicted)
+predicted$year <- years$year
+
+actual <- strawberry_data %>%
+  filter(State == "California",
+         Metric == "Production") %>% 
+   select(value, year)
+
+anomalies <- left_join(predicted,actual,by = 'year') %>% 
+  mutate(delta = (value - predicted)) %>% 
+  arrange(desc(delta)) 
+
+anomalies %>% 
+  ggplot (aes(x=year,y = delta))+
+  geom_line()+
+  labs(x = "Year",
+       y = "Delta of Production, Million Pounds",
+       title = "Deviation from the Predicted LM Value")+
+  theme(legend.position = "bottom")+
+  geom_text (aes(label = year))
+
+```
+**Figure 6:** 2001 has the largest deviation from the predicted by Linear Model value.
+
+# Discussion
+
+Production of strawberries in California has been steadily increasing over the last two decades, driven by the simultaneous increase in acreage and yields. Nonetheless, production did not grow in all years. The most notable declines happened in 2001, which is the only year (**Figure5**) where yield and acreage decreased—some years' performance is particularly interesting. Let us have a look at them.
+
+## Year 2001
+
+Many strawberry farmers have reported that they lost production at the end of the season because of the methyl bromide use regulation imposed by the California Department of Pesticide Regulation in 2001 [@carter2005costs]. The costs for the California strawberry industry amounted to $26 million total.
+
+## Year 1997
+
+During 1997, favorable spring and winter weather produced a high yield of strawberries, offset by the decreased harvest area. [@fruit1997]
+
+## Year 1994
+
+Efficient irrigation, durable and improved varieties of strawberries, and other advances throughout the industry have led to substantially more efficient production of 33 tons per acre in 1994, an almost 10-ton increase from 1972. [@losangelestimes1995]
+
+## Future
+
+We can expect a decline in the production of strawberries soon as more growers transition to the more profitable but less yielding organic production. However, this decline will be compensated by the development of more efficient practices as well as an increase in acreage as demand for strawberries will continue to surge in the future. Nonetheless, climate change in California can unpredictably impact agriculture, with floods, droughts, freezes, and diseases becoming more threatening to the production each year.
+
+
+# Sources Cited
